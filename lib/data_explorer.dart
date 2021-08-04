@@ -1,3 +1,6 @@
+import 'dart:collection';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:studio/app_state.dart';
@@ -49,16 +52,19 @@ class DataExplorer extends StatelessWidget {
                 ),
                 SizedBox(height: 20),
                 if (app.path.isEmpty)
-                  Expanded(
-                    child: Scrollbar(
-                      child: ListView.builder(
-                        itemCount: app.entries.length,
-                        itemBuilder: (context, index) {
-                          var mapEntry = app.entries.entries.elementAt(index);
-                          return EntryWidget(
-                              mapEntry.key.toString(), mapEntry.value);
-                        },
-                      ),
+                  Flexible(
+                    child: ListView.builder(
+                      itemCount: app.entries.length,
+                      // separatorBuilder: (context, id) => Divider(
+                      //   thickness: 2,
+                      // ),
+                      itemBuilder: (context, index) {
+                        var mapEntry = app.entries.entries.elementAt(index);
+                        return EntryWidget(
+                          mapEntry.key.toString(),
+                          mapEntry.value,
+                        );
+                      },
                     ),
                   )
                 /*else
@@ -85,37 +91,45 @@ class EntryWidget extends StatelessWidget {
 
   EntryWidget(this.entryKey, this.value);
 
+  String prettyPrint(dynamic value) {
+    final encoder = JsonEncoder.withIndent('    ');
+    if (value is Map) {
+      value = stringifyKeys(value as Map);
+    }
+    try {
+      return encoder.convert(value as Map);
+    } on Error catch (_, e) {
+      // print(e);
+      return value.toString();
+    }
+  }
+
+  Map<String, dynamic> stringifyKeys(Map<dynamic, dynamic> map) {
+    Map<String, dynamic> converted = {};
+    map.forEach((key, value) {
+      dynamic v = value;
+      if (value is Map) {
+        v = stringifyKeys(value);
+      }
+      converted[key.toString()] = v;
+    });
+
+    return converted;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        side: BorderSide(width: 1, color: Colors.grey[300]),
-        borderRadius: BorderRadius.all(Radius.circular(10)),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () {},
-        child: Padding(
-          padding: const EdgeInsets.all(10.0),
-          child: Row(
-            children: <Widget>[
-              SizedBox(
-                width: 100,
-                child: Text(
-                  entryKey,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              Text(
-                value.toString(),
-                style: TextStyle(fontSize: 16),
-              ),
-            ],
+      child: ListTile(
+        title: Text(
+          entryKey,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
           ),
+        ),
+        subtitle: RichText(
+          text: TextSpan(text: prettyPrint(value)),
         ),
       ),
     );

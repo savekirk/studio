@@ -44,12 +44,12 @@ class _FileUploadState extends State<FileUpload> {
     });
     reader.readAsArrayBuffer(file);
 
-    var appState = Provider.of<AppState>(context);
+    var appState = Provider.of<AppState>(context, listen: false);
     appState.status = UploadStatus.processing;
   }
 
   void _process(String name, Uint8List bytes) {
-    var appState = Provider.of<AppState>(context);
+    var appState = Provider.of<AppState>(context, listen: false);
     scheduleMicrotask(() async {
       try {
         var box = await Hive.openBox('box', bytes: bytes);
